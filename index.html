@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gafuse Calculation</title>
+<meta name="application-name" content="Gafuse Calculation">
+<meta name="apple-mobile-web-app-title" content="Gafuse Calculation">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1a1d23;--mu:#6b7280;--ac:#d9480f;--bd:#e3e5ea;--in:#f9fafb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111318;--card:#1b1e26;--tx:#eceef2;--mu:#9aa1ae;--ac:#ff7a3d;--bd:#2c303b;--in:#14171d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111318;--card:#1b1e26;--tx:#eceef2;--mu:#9aa1ae;--ac:#ff7a3d;--bd:#2c303b;--in:#14171d;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.35rem;margin:8px 0 2px}
+.sub{color:var(--mu);font-size:.9rem;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:1.05rem;margin:0 0 12px;color:var(--ac)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:.8rem;color:var(--mu)}
+input,select{width:100%;margin-top:3px;padding:9px 10px;font:inherit;font-size:1rem;color:var(--tx);background:var(--in);border:1px solid var(--bd);border-radius:8px}
+input:focus,select:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.res{margin-top:14px;border-top:1px dashed var(--bd);padding-top:10px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:.95rem}
+.row b{font-variant-numeric:tabular-nums;text-align:right}
+.big{background:var(--ac);color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:baseline}
+.big b{font-size:1.5rem}
+.note{color:var(--mu);font-size:.8rem;margin-top:6px}
+.full{grid-column:1/-1}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#d9480f">
+</head>
+<body>
+<main>
+<h1>🔧 Gafuse Calculation</h1>
+<p class="sub">กรอกค่า ผลลัพธ์อัปเดตทันที</p>
+
+<section class="card">
+<h2>1. ขนาดเครื่องยนต์และอัตราส่วนกำลังอัด</h2>
+<div class="grid">
+<label class="full">รุ่นรถฐาน (Honda)
+<select id="model"></select></label>
+<p class="note full" style="margin:0">ค่า Bore/Stroke นอกเหนือจากไฟล์ของคุณมาจากข้อมูลทั่วไป ควรตรวจกับคู่มือรถ และแก้ไขช่องด้านล่างเองได้</p>
+<label>กระบอกสูบ Bore (mm)<input id="bore" type="number" inputmode="decimal" step="any" value="52.4"></label>
+<label>ระยะชักฐาน (mm)<input id="bstroke" type="number" inputmode="decimal" step="any" value="57.9"></label>
+<label>เพิ่มชัก (mm)<input id="off" type="number" inputmode="decimal" step="any" value="10"></label>
+<label>ระยะชักรวม (mm)<input id="stroke" type="number" step="any" value="77.9" readonly></label>
+<label>จำนวนสูบ<input id="cyl" type="number" inputmode="numeric" step="1" value="1"></label>
+<label>ปริมาตรห้องเผาไหม้ Vc (cc)<input id="vc" type="number" inputmode="decimal" step="any" value="14"></label>
+<label>CC เป้าหมาย (ไม่บังคับ)<input id="tcc" type="number" inputmode="decimal" step="any" placeholder="เช่น 200"></label>
+<label>กำลังอัดเป้าหมาย (ไม่บังคับ)<input id="tcr" type="number" inputmode="decimal" step="any" placeholder="เช่น 10.5"></label>
+</div>
+<div class="res" id="r1"></div>
+<p class="note">ระยะชักรวม = ระยะชักฐาน + 2 × เพิ่มชัก<br>กำลังอัดที่แนะนำ: เบนซิน 91–95 → 10–12.5:1 · E20 → 11–13:1 · E85 → 12–14.5:1</p>
+</section>
+
+<section class="card">
+<h2>2. ก้านสูบและค่า Rod Ratio</h2>
+<div class="grid">
+<label class="full">ความยาวก้านสูบ (mm, ศูนย์ถึงศูนย์)<input id="rod" type="number" inputmode="decimal" step="any" value="118"></label>
+</div>
+<div class="res" id="rr"></div>
+<div class="res"><div class="row"><span>Rod Ratio</span><span>รอบที่เหมาะ</span><span>ก้านที่ต้องใช้</span></div><div id="rt"></div></div>
+</section>
+<section class="card">
+<h2>3. อัตราส่วนอากาศต่อเชื้อเพลิง (AFR / Lambda)</h2>
+<div class="grid">
+<label class="full">ชนิดเชื้อเพลิง
+<select id="fuel">
+<option value="14.7">น้ำมัน 91-95 (14.7)</option>
+<option value="13">E20 (≈ 13.0)</option>
+<option value="9.76">E85 (9.76)</option>
+<option value="7">M85 (≈ 7.0)</option>
+<option value="14.5">ดีเซล (14.5)</option>
+<option value="15.5">LPG (15.5)</option>
+<option value="6.47">เมทานอล (6.47)</option>
+</select></label>
+<label>มวลอากาศ (กรัม)<input id="air" type="number" inputmode="decimal" step="any" value="14.7"></label>
+<label>มวลเชื้อเพลิง (กรัม)<input id="fl" type="number" inputmode="decimal" step="any" value="1"></label>
+</div>
+<div class="res" id="r2"></div>
+</section>
+
+<section class="card">
+<h2>4. อัตราทดเกียร์</h2>
+<div class="grid">
+<label>ฟันเฟืองขับ (ตัวขับ)<input id="g1" type="number" inputmode="decimal" step="any" value="14"></label>
+<label>ฟันเฟืองตาม<input id="g2" type="number" inputmode="decimal" step="any" value="42"></label>
+<label>อัตราทดเกียร์ที่เลือกใช้ (เช่น 1.2)<input id="gr" type="number" inputmode="decimal" step="any" value="1"></label>
+<label>รอบเครื่อง (rpm)<input id="rpm" type="number" inputmode="decimal" step="any" value="6000"></label>
+</div>
+<div class="res" id="r3"></div>
+<p class="note">อัตราทดรวม = (ฟันตาม ÷ ฟันขับ) × อัตราทดเกียร์ที่เลือก</p>
+</section>
+<section class="card">
+<h2>5. CC หัวฉีดตามชนิดน้ำมัน</h2>
+<div class="grid">
+<label>เพิ่มหัวฉีด E85 (%)<input id="p1" type="number" inputmode="decimal" step="any" value="35"></label>
+<label>เพิ่มหัวฉีด E20 (%)<input id="p2" type="number" inputmode="decimal" step="any" value="15"></label>
+<label>เพิ่มหัวฉีด M85 (%)<input id="p3" type="number" inputmode="decimal" step="any" placeholder="ใส่ค่าเอง"></label>
+</div>
+<div class="res" id="r5"></div>
+<p class="note">CC หัวฉีด = ความจุเครื่อง × (1 + เปอร์เซ็นต์ที่เพิ่ม)</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const v=id=>parseFloat($(id).value);
+const f=(x,d=2)=>isFinite(x)?x.toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d}):"–";
+const row=(a,b)=>'<div class="row"><span>'+a+'</span><b>'+b+'</b></div>';
+const ok=(...a)=>a.every(x=>isFinite(x)&&x>0);
+
+function calc1(){
+  const bore=v("bore"),stroke=v("stroke"),base=v("bstroke"),n=v("cyl"),vc=v("vc"),t=v("tcr"),tc=v("tcc");
+  let h="";
+  if(!ok(bore,stroke,n)){$("r1").innerHTML='<div class="note">กรอก Bore, Stroke และจำนวนสูบให้ครบ (ค่ามากกว่า 0)</div>';return}
+  const vs=Math.PI/4*bore*bore*stroke/1000, disp=vs*n, bs=bore/stroke;
+  if(ok(vc)){const cr=(vs+vc)/vc;h+='<div class="big"><span>กำลังอัด</span><b>'+f(cr)+' : 1</b></div>'}
+  h+=row("ปริมาตรกวาดต่อสูบ",f(vs)+" cc");
+  h+=row("ความจุรวม",f(disp,0)+" cc ("+f(disp/1000)+" L)");
+  h+=row("ความจุ (ลูกบาศก์นิ้ว)",f(disp/16.387)+" ci");
+  h+=row("Bore / Stroke",f(bs,3)+(bs>1.02?" (Oversquare)":bs<0.98?" (Undersquare)":" (Square)"));
+  h+=row("ระยะชักรวม",f(stroke,1)+" mm ("+f(base,1)+" + 2×"+f(v("off")||0,1)+")");
+  if(ok(tc)){const need=tc*1000/(Math.PI/4*bore*bore*n);h+=row("ชักรวมที่ต้องใช้ให้ได้ "+f(tc,0)+" cc",f(need,1)+" mm")+row("ต้องเพิ่มชัก",f((need-base)/2,1)+" mm")}
+  if(ok(t)&&t>1)h+=row("Vc ที่ต้องใช้เพื่อให้ได้ "+f(t,1)+":1",f(vs/(t-1))+" cc");
+  $("r1").innerHTML=h;
+}
+function calc2(){
+  const a=v("air"),fl=v("fl"),s=v("fuel");
+  if(!ok(a,fl)){$("r2").innerHTML='<div class="note">กรอกมวลอากาศและเชื้อเพลิง</div>';return}
+  const afr=a/fl,l=afr/s;
+  const st=Math.abs(l-1)<0.02?"สมดุลพอดี (Stoichiometric)":l<1?"ส่วนผสมหนา (Rich)":"ส่วนผสมบาง (Lean)";
+  $("r2").innerHTML='<div class="big"><span>AFR</span><b>'+f(afr)+' : 1</b></div>'+row("Lambda (λ)",f(l,3))+row("สถานะ",st)+row("AFR สมดุลของเชื้อเพลิงนี้",f(s)+" : 1");
+}
+function calc3(){
+  const a=v("g1"),b=v("g2"),g=v("gr"),r=v("rpm");
+  if(!ok(a,b,g)){$("r3").innerHTML='<div class="note">กรอกจำนวนฟันและอัตราทดให้ครบ</div>';return}
+  const fd=b/a,tot=fd*g;
+  let h='<div class="big"><span>อัตราทดรวม</span><b>'+f(tot,3)+' : 1</b></div>'+row("อัตราทดเฟืองขับ",f(fd,3)+" : 1");
+  if(ok(r))h+=row("รอบเอาต์พุต",f(r/tot,0)+" rpm");
+  $("r3").innerHTML=h;
+}
+const M=[["Wave 100 / Dream 100",50,49.5,1],["Wave 110i / Click 110i / Scoopy-i / Zoomer-X",50,55.6,1],["Wave 110i LED / Super Cub 110",47,63.1,1],["Wave 125 R/S / Click 125i / MSX125 / Super Cub 125",52.4,57.9,1],["Wave 125i LED (ชัก 55.5 จากไฟล์คุณ)",53.5,55.5,1],["Lead 125",53.5,55.5,1],["Giorno 125",53.5,55.5,1],["Click 150i / PCX150 / CBR150R / CB150R / ADV150 / CRF150L",57.3,57.8,1],["PCX160 / Click160 / Vario160 / ADV160",60,55.5,1],["CRF110F",53,49.5,1],["CBR250R / CRF250L",76,55,1],["CB300R / CRF300L / Rebel 300",76,63,1],["CBR250RR",62,41.4,4],["CBR500R / CB500F / CB500X / Rebel 500",67,66.8,2],["CBR650R / CB650R",67,46,4],["CRF450R",96,62.1,1]];
+$("model").innerHTML='<option value="-1">กำหนดเอง</option>'+M.map((m,i)=>'<option value="'+i+'">'+m[0]+'</option>').join("");
+$("model").value="3";
+$("model").addEventListener("input",()=>{const m=M[$("model").value];if(m){$("bore").value=m[1];$("bstroke").value=m[2];$("cyl").value=m[3]}});
+const RT=[[1.2,"9000-9500"],[1.3,"10000-11000"],[1.4,"12000-13000"],[1.5,"13000-14000"],[1.6,"14000-15000"],[1.7,"15000-16000"],[1.8,"16000-17000"]];
+function calcRod(){
+  const rod=v("rod"),s=v("stroke");
+  if(!ok(rod,s)){$("rr").innerHTML='<div class="note">กรอกความยาวก้านสูบ</div>';$("rt").innerHTML="";return}
+  const r=rod/s;let cur=-1;RT.forEach((x,i)=>{if(r>=x[0]-1e-9)cur=i});
+  $("rr").innerHTML='<div class="big"><span>Rod Ratio</span><b>'+f(r,3)+'</b></div>'+row("ชักรวมที่ใช้คำนวณ",f(s,1)+" mm")+row("รอบเครื่องที่เหมาะ",cur<0?"ต่ำกว่า 1.2 (นอกตาราง)":RT[cur][1]+" rpm"+(r>=1.9?" หรือสูงกว่า":""));
+  $("rt").innerHTML=RT.map((x,i)=>'<div class="row"'+(i==cur?' style="color:var(--ac);font-weight:700"':'')+'><span>'+f(x[0],1)+'</span><span>'+x[1]+'</span><b>'+f(x[0]*s,1)+' mm</b></div>').join("");
+}
+function calc5(){
+  const bore=v("bore"),s=v("stroke"),n=v("cyl");
+  if(!ok(bore,s,n)){$("r5").innerHTML='<div class="note">กรอกข้อมูลเครื่องยนต์ในส่วนที่ 1</div>';return}
+  const d=Math.PI/4*bore*bore*s*n/1000;
+  $("r5").innerHTML=row("ความจุเครื่องยนต์",f(d)+" cc")+[["E85","p1"],["E20","p2"],["M85","p3"]].map(x=>{const p=v(x[1]);return row("CC หัวฉีด "+x[0],isFinite(p)?f(d*(1+p/100))+" cc":"–")}).join("");
+}
+function all(){const b=v("bstroke"),o=v("off")||0;if(isFinite(b))$("stroke").value=+(b+2*o).toFixed(2);calc1();calcRod();calc2();calc3();calc5()}
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",all));
+all();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
